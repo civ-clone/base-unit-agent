@@ -1,0 +1,13 @@
+{
+  "name": "@civ-clone/base-unit-agent",
+  "version": "0.0.0",
+  "description": "What becomes of a Diplomat or Spy on a mission: whether it is caught or escapes, the targets it may choose, whether a city's defenders detect it, and the distance from a Palace that prices its work.",
+  "repository": "git@github.com:civ-clone/base-unit-agent.git",
+  "keywords": [
+    "typescript",
+    "civilization"
+  ],
+  "author": "dom111 <dom111@users.noreply.github.com>",
+  "license": "MIT",
+  "private": false
+}
