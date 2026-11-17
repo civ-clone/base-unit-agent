@@ -51,8 +51,10 @@ Spy that stays after an embassy pays what the rule set says.
 - `escape(unit, mode, options)`: the whole of `spy_try_escape` but the destroying. For an ordinary or hard escape the
   check costs `missionCost` moves (default 0); then `rollEscape(odds(unit, mode))` (default `escapeOdds(mode,
   false)`); an agent that escapes and `relocates` (default: after a mission, not after a caught check) goes to its
-  player's nearest city with no moves left, inactive, and the `Moved` rules run with `action`; then
-  `escaped(unit, city, mode)` is called (Civ2: the Spy becomes a veteran). Returns whether it escaped.
+  player's nearest city with no moves left, inactive, and the `Moved` rules run with `action`; an agent aboard a
+  transport (in `transportRegistry`, default core-unit-transport's instance) is unloaded there and its busy state
+  cleared, so the ship doesn't carry it on; then `escaped(unit, city, mode)` is called (Civ2: the Spy becomes a
+  veteran). Returns whether it escaped.
 
 ## `lib/mission`
 
