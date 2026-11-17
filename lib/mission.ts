@@ -9,6 +9,7 @@ import Action from '@civ-clone/core-unit/Action';
 import AgentLost from '../Rules/AgentLost';
 import AgentSurvives from '../Rules/AgentSurvives';
 import City from '@civ-clone/core-city/City';
+import MissionChoice from '../Rules/MissionChoice';
 import MissionDetected from '../Rules/MissionDetected';
 import MissionMode from '../Rules/MissionMode';
 import MissionTargets from '../Rules/MissionTargets';
@@ -165,3 +166,17 @@ export const missionDetected = (
   ruleRegistry
     .process(MissionDetected, unit, city, mission)
     .some((detected: boolean): boolean => detected === true);
+
+/**
+ * The mission a computer player's `unit` would choose at `city` (`MissionChoice`): the first answer that is a string,
+ * or `undefined` with none, when the client keeps its own choice. A rule may draw random numbers, so ask once each time
+ * the agent is about to enter the city.
+ */
+export const missionChoice = (
+  unit: Unit,
+  city: City,
+  ruleRegistry: RuleRegistry
+): string | undefined =>
+  ruleRegistry
+    .process(MissionChoice, unit, city)
+    .find((answer: unknown): answer is string => typeof answer === 'string');

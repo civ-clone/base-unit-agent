@@ -12,6 +12,7 @@ import {
   agentSurvives,
   chosenTarget,
   loseAgent,
+  missionChoice,
   missionDetected,
   missionMode,
   missionTargets,
@@ -28,6 +29,7 @@ import CityImprovementRegistry from '@civ-clone/core-city-improvement/CityImprov
 import CityRegistry from '@civ-clone/core-city/CityRegistry';
 import Criterion from '@civ-clone/core-rule/Criterion';
 import Effect from '@civ-clone/core-rule/Effect';
+import MissionChoice from '../Rules/MissionChoice';
 import MissionDetected from '../Rules/MissionDetected';
 import MissionTargets from '../Rules/MissionTargets';
 import Moved from '@civ-clone/core-unit/Rules/Moved';
@@ -454,6 +456,35 @@ describe('missionMode', (): void => {
     ruleRegistry.register(new MissionMode(new Effect(() => ORDINARY)));
 
     expect(missionMode(spy, mission, HARD, ruleRegistry)).to.equal(ORDINARY);
+  });
+});
+
+describe('missionChoice', (): void => {
+  it('is undefined with no rules, and the first answer that is a string otherwise, asked once', (): void => {
+    const { city, enemy, ruleRegistry, spy, tile } = setUp(),
+      target = city(tile(3), enemy),
+      asked: [Unit, City][] = [];
+
+    expect(missionChoice(spy, target, ruleRegistry)).to.undefined;
+
+    ruleRegistry.register(
+      new MissionChoice(new Effect((): undefined => undefined)),
+      new MissionChoice(
+        new Effect((unit: Unit, city: City): string => {
+          asked.push([unit, city]);
+
+          return 'steal-technology';
+        })
+      ),
+      new MissionChoice(new Effect((): string => 'poison-water'))
+    );
+
+    expect(missionChoice(spy, target, ruleRegistry)).to.equal(
+      'steal-technology'
+    );
+    expect(asked.length).to.equal(1);
+    expect(asked[0][0]).to.equal(spy);
+    expect(asked[0][1]).to.equal(target);
   });
 });
 

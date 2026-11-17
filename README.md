@@ -35,6 +35,10 @@ Spy that stays after an embassy pays what the rule set says.
   destruction.
 - **`MissionTargets(unit, city, mission) → unknown[]`.** What the agent may choose to aim the mission at (advances to
   steal, buildings to sabotage). The lists are joined. With none, a mission offers no choice and ignores one.
+- **`MissionChoice(unit, city) → string | undefined`.** The mission a computer player's agent would choose at `city`, by
+  the name of the rule set's action row (`'steal-technology'`, say), for an AI client to read. No mission asks it. A
+  rule may draw random numbers, so a client asks once each time its agent is about to enter the city; with no answer,
+  the client chooses for itself.
 - **`MissionDetected(unit, city, mission) → boolean`.** Whether the city's defenders detect the agent
   (counter-espionage). Any `true` detects; with no rules, nothing is detected. StealTechnology asks it for a theft
   with no chosen target, after the caught check.
@@ -64,6 +68,7 @@ Spy that stays after an embassy pays what the rule set says.
 - `loseAgent(unit, city, mission, caught, ruleRegistry, by?)`: runs `AgentLost`, then `unit.destroy(by)` (`destroy()`
   with no `by`).
 - `missionTargets(unit, city, mission, ruleRegistry)`, `missionDetected(unit, city, mission, ruleRegistry)`.
+- `missionChoice(unit, city, ruleRegistry)`: the first `MissionChoice` answer that is a string, or `undefined`.
 - `chosenTarget(choice, targets)`: the target `choice` is, or names; `undefined` for any other choice.
 - `targetName(target)`: a string as it is, a class or an object by its type name (`typeNameOf`), as a client sends a
   choice back.
