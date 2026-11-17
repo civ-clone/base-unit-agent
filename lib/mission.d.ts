@@ -70,3 +70,13 @@ export declare const missionDetected: (
   mission: Action,
   ruleRegistry: RuleRegistry
 ) => boolean;
+/**
+ * The mission a computer player's `unit` would choose at `city` (`MissionChoice`): the first answer that is a string,
+ * or `undefined` with none, when the client keeps its own choice. A rule may draw random numbers, so ask once each time
+ * the agent is about to enter the city.
+ */
+export declare const missionChoice: (
+  unit: Unit,
+  city: City,
+  ruleRegistry: RuleRegistry
+) => string | undefined;
