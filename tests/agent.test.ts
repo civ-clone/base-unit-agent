@@ -41,6 +41,9 @@ import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
 import World from '@civ-clone/core-world/World';
 import Yield from '@civ-clone/core-yield/Yield';
+import { ITransport } from '@civ-clone/core-unit-transport/Transport';
+import TransportManifest from '@civ-clone/core-unit-transport/TransportManifest';
+import TransportRegistry from '@civ-clone/core-unit-transport/TransportRegistry';
 import { expect } from 'chai';
 import pay from '../lib/pay';
 
@@ -207,6 +210,77 @@ describe('escape', (): void => {
     expect(spy.active()).to.false;
     expect(moved).to.deep.equal([[spy, mission]]);
     expect(escapedTo).to.deep.equal([[spy, home, ORDINARY]]);
+  });
+
+  it('takes an agent aboard a transport off it when it escapes to a city, a caught check too (`unit_relocate`)', (): void => {
+    const {
+        city,
+        cityRegistry,
+        from,
+        mission,
+        player,
+        ruleRegistry,
+        spy,
+        tile,
+      } = setUp(),
+      home = city(tile(12), player),
+      transportRegistry = new TransportRegistry(),
+      unloaded: Unit[] = [],
+      ship = {
+        tile: (): Tile => from,
+        unload: (unit: Unit): boolean => {
+          transportRegistry.unregister(transportRegistry.getByUnit(unit));
+          unloaded.push(unit);
+
+          return true;
+        },
+      } as unknown as ITransport,
+      board = (): void => {
+        transportRegistry.register(new TransportManifest(ship, spy, from));
+        spy.setBusy({} as never);
+        spy.setTile(from);
+      };
+
+    board();
+    expect(
+      escape(spy, ORDINARY, {
+        action: mission,
+        cityRegistry,
+        randomNumberGenerator: rolls([0.6]),
+        ruleRegistry,
+        transportRegistry,
+      })
+    ).to.true;
+    expect(spy.tile()).to.equal(home.tile());
+    expect(transportRegistry.hasUnit(spy)).to.false;
+    expect(spy.busy()).to.null;
+
+    board();
+    expect(
+      escape(spy, CAUGHT_CHECK, {
+        action: mission,
+        cityRegistry,
+        randomNumberGenerator: rolls([0.5]),
+        relocates: true,
+        ruleRegistry,
+        transportRegistry,
+      })
+    ).to.true;
+    expect(transportRegistry.hasUnit(spy)).to.false;
+    expect(unloaded).to.deep.equal([spy, spy]);
+
+    // One that escapes with no city to go to stays aboard.
+    const alone = setUp(),
+      aloneRegistry = new TransportRegistry();
+
+    aloneRegistry.register(new TransportManifest(ship, alone.spy, alone.from));
+    escape(alone.spy, ORDINARY, {
+      cityRegistry: alone.cityRegistry,
+      randomNumberGenerator: rolls([0.6]),
+      ruleRegistry: alone.ruleRegistry,
+      transportRegistry: aloneRegistry,
+    });
+    expect(aloneRegistry.hasUnit(alone.spy)).to.true;
   });
 
   it('charges the mission cost and leaves a caught agent where it is, for the mission to destroy', (): void => {

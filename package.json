@@ -47,6 +47,7 @@
     "@civ-clone/core-rule": "^0.1.9",
     "@civ-clone/core-treasury": "^0.1.10",
     "@civ-clone/core-unit": "^0.1.32",
+    "@civ-clone/core-unit-transport": "^0.1.10",
     "@civ-clone/core-world": "^0.1.24",
     "@civ-clone/core-yield": "^0.1.6"
   }

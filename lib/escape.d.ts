@@ -1,5 +1,6 @@
 import { CityRegistry } from '@civ-clone/core-city/CityRegistry';
 import { RuleRegistry } from '@civ-clone/core-rule/RuleRegistry';
+import { TransportRegistry } from '@civ-clone/core-unit-transport/TransportRegistry';
 import Action from '@civ-clone/core-unit/Action';
 import City from '@civ-clone/core-city/City';
 import Unit from '@civ-clone/core-unit/Unit';
@@ -42,15 +43,16 @@ export interface EscapeOptions {
   randomNumberGenerator?: () => number;
   relocates?: boolean;
   ruleRegistry?: RuleRegistry;
+  transportRegistry?: TransportRegistry;
 }
 /**
  * `unit` tries to escape after (or, for `CAUGHT_CHECK`, before) a mission, as OpenCiv2's `spy_try_escape` does, and
  * the answer is whether it did:
  * 1. for an ordinary or hard escape, the mission costs `missionCost` moves;
  * 2. `rollEscape(odds(unit, mode))`;
- * 3. an agent that escapes goes, when it `relocates`, to its player's nearest city, if it has one, with no moves left,
- *    inactive, and the `Moved` rules run for it (with `action`); then, after a mission (not a caught check),
- *    `escaped(unit, city, mode)` is called.
+ * 3. an agent that escapes goes, when it `relocates`, to its player's nearest city, if it has one: off any transport
+ *    it was aboard (unloaded, its busy state cleared), with no moves left, inactive, and the `Moved` rules run for it
+ *    (with `action`); then, after a mission (not a caught check), `escaped(unit, city, mode)` is called.
  *
  * It never destroys the agent: an `AgentSurvives` rule answers what this returns, and the mission destroys an agent
  * that doesn't survive.
@@ -67,6 +69,7 @@ export declare const escape: (
     randomNumberGenerator,
     relocates,
     ruleRegistry,
+    transportRegistry,
   }?: EscapeOptions
 ) => boolean;
 export default escape;
