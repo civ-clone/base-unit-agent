@@ -1,33 +1,83 @@
 import { CAUGHT_CHECK, EscapeMode } from './escape';
 import Action from '@civ-clone/core-unit/Action';
+import AgentLost from '../Rules/AgentLost';
 import AgentSurvives from '../Rules/AgentSurvives';
 import City from '@civ-clone/core-city/City';
 import MissionDetected from '../Rules/MissionDetected';
+import MissionMode from '../Rules/MissionMode';
 import MissionTargets from '../Rules/MissionTargets';
+import Player from '@civ-clone/core-player/Player';
 import { RuleRegistry } from '@civ-clone/core-rule/RuleRegistry';
 import Unit from '@civ-clone/core-unit/Unit';
 import { typeNameOf } from '@civ-clone/core-data-object/DataObject';
 
 /**
- * Whether `unit` survives a `mode` check on `mission`: every `AgentSurvives` rule that answers says so. When none
- * answers, `fallback()`, the mission's own answer from before the rule existed. Without a `fallback`: the caught check
- * passes, and after the mission the agent is used up. Nothing is drawn when no rule answers and the fallback draws
- * nothing.
+ * Whether `unit` survives a `mode` check on `mission` (`AgentSurvives`): every rule that answers says `true` (an
+ * `undefined` answer counts as no). When none answers, `fallback()`, the mission's own answer from before the rule
+ * existed. Without a `fallback`: the caught check passes, and after the mission the agent is used up. Nothing is drawn
+ * when no rule answers and the fallback draws nothing. `missionMode` is the mission's resolved mode (`missionMode()`),
+ * given to the rules as their fourth argument; it defaults to `mode`.
  */
 export const agentSurvives = (
   unit: Unit,
   mission: Action,
   mode: EscapeMode,
   ruleRegistry: RuleRegistry,
-  fallback: () => boolean = (): boolean => mode === CAUGHT_CHECK
+  fallback: () => boolean = (): boolean => mode === CAUGHT_CHECK,
+  resolvedMode: EscapeMode = mode
 ): boolean => {
-  const answers = ruleRegistry.process(AgentSurvives, unit, mission, mode);
+  const answers = ruleRegistry.process(
+    AgentSurvives,
+    unit,
+    mission,
+    mode,
+    resolvedMode
+  );
 
   if (answers.length === 0) {
     return fallback();
   }
 
   return answers.every((survives: boolean): boolean => survives === true);
+};
+
+/**
+ * The mode `unit` will escape with after `mission` (`MissionMode`): the first rule's answer, or `defaultMode` with
+ * none. Ask it once, before the caught check and the mission's effects.
+ */
+export const missionMode = (
+  unit: Unit,
+  mission: Action,
+  defaultMode: EscapeMode,
+  ruleRegistry: RuleRegistry
+): EscapeMode => {
+  const [mode] = ruleRegistry.process(MissionMode, unit, mission, defaultMode);
+
+  return mode === undefined ? defaultMode : mode;
+};
+
+/**
+ * `mission` destroys its agent: the `AgentLost` rules run first (`caught` before the mission, otherwise after it), then
+ * `unit.destroy(by)`. A caught agent is destroyed by the city's owner; one used up after a mission as each mission
+ * always has been.
+ */
+export const loseAgent = (
+  unit: Unit,
+  city: City | null,
+  mission: Action,
+  caught: boolean,
+  ruleRegistry: RuleRegistry,
+  by?: Player | null
+): void => {
+  ruleRegistry.process(AgentLost, unit, city, mission, caught);
+
+  if (by === undefined) {
+    unit.destroy();
+
+    return;
+  }
+
+  unit.destroy(by);
 };
 
 /** What `unit` may aim `mission` at in `city`: every `MissionTargets` rule's list, joined. Empty with no rules. */

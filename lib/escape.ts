@@ -78,9 +78,11 @@ export interface EscapeOptions {
   // The action the agent carried out, for the `Moved` rules run when it moves to a city.
   action?: Action;
   cityRegistry?: CityRegistry;
-  // Called for an agent that escaped, with the city it went to, if any. Civ2 makes a Spy a veteran after a mission.
+  // Called for an agent that escaped after a mission (not a caught check), with the city it went to, if any. Civ2
+  //  makes a Spy a veteran then.
   escaped?: (unit: Unit, city: City | null, mode: EscapeMode) => void;
-  // Moves the check costs the agent first, for an ordinary or hard escape (not a caught check). Civ2: 1. Default 0.
+  // Moves the check costs the agent first, for an ordinary or hard escape. Civ2: 1 (`spy_try_escape` adds a full move
+  //  only when `mission_mode > -1`, so a caught check costs nothing). Default 0.
   missionCost?: number;
   // The escape odds. Default: `escapeOdds(mode, false)`; a rule set says which agents are veterans.
   odds?: (unit: Unit, mode: EscapeMode) => number;
@@ -98,7 +100,8 @@ export interface EscapeOptions {
  * 1. for an ordinary or hard escape, the mission costs `missionCost` moves;
  * 2. `rollEscape(odds(unit, mode))`;
  * 3. an agent that escapes goes, when it `relocates`, to its player's nearest city, if it has one, with no moves left,
- *    inactive, and the `Moved` rules run for it (with `action`); then `escaped(unit, city, mode)` is called.
+ *    inactive, and the `Moved` rules run for it (with `action`); then, after a mission (not a caught check),
+ *    `escaped(unit, city, mode)` is called.
  *
  * It never destroys the agent: an `AgentSurvives` rule answers what this returns, and the mission destroys an agent
  * that doesn't survive.
@@ -137,7 +140,10 @@ export const escape = (
     }
   }
 
-  escaped?.(unit, city, mode);
+  // A veteran's promotion and the like follow a mission, not a caught check.
+  if (mode >= 0) {
+    escaped?.(unit, city, mode);
+  }
 
   return true;
 };

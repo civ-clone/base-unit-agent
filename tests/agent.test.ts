@@ -11,10 +11,15 @@ import {
 import {
   agentSurvives,
   chosenTarget,
+  loseAgent,
   missionDetected,
+  missionMode,
   missionTargets,
   targetName,
 } from '../lib/mission';
+import AgentLost from '../Rules/AgentLost';
+import Destroyed from '@civ-clone/core-unit/Rules/Destroyed';
+import MissionMode from '../Rules/MissionMode';
 import distanceFromPalace, { palaceTiles } from '../lib/distanceFromPalace';
 import AgentSurvives from '../Rules/AgentSurvives';
 import City from '@civ-clone/core-city/City';
@@ -221,18 +226,23 @@ describe('escape', (): void => {
     expect(spy.destroyed()).to.false;
   });
 
-  it('costs nothing and moves nothing for a caught check, at odds 3', (): void => {
-    const { city, cityRegistry, from, player, spy, tile } = setUp();
+  it('costs nothing, moves nothing and promotes nothing for a caught check, at odds 3', (): void => {
+    const { city, cityRegistry, from, player, spy, tile } = setUp(),
+      escaped: Unit[] = [];
 
     city(tile(12), player);
 
     expect(
       escape(spy, CAUGHT_CHECK, {
         cityRegistry,
+        escaped: (unit: Unit): void => {
+          escaped.push(unit);
+        },
         missionCost: 1,
         randomNumberGenerator: rolls([0.34]),
       })
     ).to.true;
+    expect(escaped).to.deep.equal([]);
     expect(
       escape(spy, CAUGHT_CHECK, {
         cityRegistry,
@@ -281,17 +291,24 @@ describe('agentSurvives', (): void => {
       .true;
   });
 
-  it('survives when every rule that answers says so', (): void => {
+  it('survives when every rule that answers says so, and passes the resolved mode', (): void => {
     const { mission, ruleRegistry, spy } = setUp(),
-      asked: [Unit, UnitAction, EscapeMode][] = [];
+      asked: [Unit, UnitAction, EscapeMode, EscapeMode][] = [];
 
     ruleRegistry.register(
       new AgentSurvives(
-        new Effect((unit: Unit, action: UnitAction, mode: EscapeMode) => {
-          asked.push([unit, action, mode]);
+        new Effect(
+          (
+            unit: Unit,
+            action: UnitAction,
+            mode: EscapeMode,
+            resolved: EscapeMode
+          ) => {
+            asked.push([unit, action, mode, resolved]);
 
-          return true;
-        })
+            return true;
+          }
+        )
       ),
       new AgentSurvives(
         new Criterion(
@@ -304,11 +321,91 @@ describe('agentSurvives', (): void => {
 
     expect(agentSurvives(spy, mission, ORDINARY, ruleRegistry)).to.true;
     expect(agentSurvives(spy, mission, HARD, ruleRegistry)).to.false;
-    expect(agentSurvives(spy, mission, CAUGHT_CHECK, ruleRegistry)).to.true;
+    expect(
+      agentSurvives(spy, mission, CAUGHT_CHECK, ruleRegistry, undefined, HARD)
+    ).to.true;
     expect(asked).to.deep.equal([
-      [spy, mission, ORDINARY],
-      [spy, mission, HARD],
-      [spy, mission, CAUGHT_CHECK],
+      [spy, mission, ORDINARY, ORDINARY],
+      [spy, mission, HARD, HARD],
+      [spy, mission, CAUGHT_CHECK, HARD],
+    ]);
+  });
+
+  it('counts an undefined answer as no', (): void => {
+    const { mission, ruleRegistry, spy } = setUp();
+
+    ruleRegistry.register(
+      new AgentSurvives(new Effect((): boolean => undefined as never))
+    );
+
+    expect(agentSurvives(spy, mission, CAUGHT_CHECK, ruleRegistry)).to.false;
+  });
+});
+
+describe('missionMode', (): void => {
+  it('is the default with no rules, and the first answer otherwise', (): void => {
+    const { mission, ruleRegistry, spy } = setUp(),
+      asked: EscapeMode[] = [];
+
+    expect(missionMode(spy, mission, ORDINARY, ruleRegistry)).to.equal(
+      ORDINARY
+    );
+
+    ruleRegistry.register(
+      new MissionMode(
+        new Effect(
+          (unit: Unit, action: UnitAction, defaultMode: EscapeMode) => {
+            asked.push(defaultMode);
+
+            return HARD;
+          }
+        )
+      )
+    );
+
+    expect(missionMode(spy, mission, ORDINARY, ruleRegistry)).to.equal(HARD);
+    expect(asked).to.deep.equal([ORDINARY]);
+  });
+});
+
+describe('loseAgent', (): void => {
+  it('runs the `AgentLost` rules, then destroys the agent, by whoever is given', (): void => {
+    const { enemy, mission, ruleRegistry, spy } = setUp(),
+      log: string[] = [],
+      city = {} as City;
+
+    ruleRegistry.register(
+      new AgentLost(
+        new Effect(
+          (
+            unit: Unit,
+            at: City | null,
+            action: UnitAction,
+            caught: boolean
+          ) => {
+            log.push(
+              `lost ${unit === spy} ${at === city} ${
+                action === mission
+              } ${caught}`
+            );
+          }
+        )
+      ),
+      new Destroyed(
+        new Effect((unit: Unit, by: Player | null): void => {
+          log.push(`destroyed ${unit === spy} ${by === enemy ? 'enemy' : by}`);
+        })
+      )
+    );
+
+    loseAgent(spy, city, mission, true, ruleRegistry, enemy);
+    loseAgent(spy, null, mission, false, ruleRegistry);
+
+    expect(log).to.deep.equal([
+      'lost true true true true',
+      'destroyed true enemy',
+      'lost true false true false',
+      'destroyed true null',
     ]);
   });
 });

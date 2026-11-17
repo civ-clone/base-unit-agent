@@ -47,7 +47,8 @@ export interface EscapeOptions {
  * 1. for an ordinary or hard escape, the mission costs `missionCost` moves;
  * 2. `rollEscape(odds(unit, mode))`;
  * 3. an agent that escapes goes, when it `relocates`, to its player's nearest city, if it has one, with no moves left,
- *    inactive, and the `Moved` rules run for it (with `action`); then `escaped(unit, city, mode)` is called.
+ *    inactive, and the `Moved` rules run for it (with `action`); then, after a mission (not a caught check),
+ *    `escaped(unit, city, mode)` is called.
  *
  * It never destroys the agent: an `AgentSurvives` rule answers what this returns, and the mission destroys an agent
  * that doesn't survive.
