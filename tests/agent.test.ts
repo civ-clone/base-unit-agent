@@ -366,6 +366,21 @@ describe('missionMode', (): void => {
     expect(missionMode(spy, mission, ORDINARY, ruleRegistry)).to.equal(HARD);
     expect(asked).to.deep.equal([ORDINARY]);
   });
+
+  it('passes over an answer that is not ORDINARY or HARD', (): void => {
+    const { mission, ruleRegistry, spy } = setUp();
+
+    ruleRegistry.register(
+      new MissionMode(new Effect(() => undefined as never)),
+      new MissionMode(new Effect(() => CAUGHT_CHECK as never))
+    );
+
+    expect(missionMode(spy, mission, HARD, ruleRegistry)).to.equal(HARD);
+
+    ruleRegistry.register(new MissionMode(new Effect(() => ORDINARY)));
+
+    expect(missionMode(spy, mission, HARD, ruleRegistry)).to.equal(ORDINARY);
+  });
 });
 
 describe('loseAgent', (): void => {

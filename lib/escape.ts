@@ -22,6 +22,9 @@ export const HARD = 1;
 /** The kinds of check an agent survives or not, as OpenCiv2's `spy_try_escape` numbers them. */
 export type EscapeMode = typeof CAUGHT_CHECK | typeof ORDINARY | typeof HARD;
 
+/** The modes an agent escapes with after a mission. */
+export type MissionEscapeMode = typeof ORDINARY | typeof HARD;
+
 /**
  * The escape odds `n` for `mode`, as OpenCiv2's `spy_try_escape` works them out (`unit_spy.cpp:23-31`): 3 for a caught
  * check and 2 otherwise, doubled for a veteran, then halved (rounded down) for a hard escape. The agent escapes unless

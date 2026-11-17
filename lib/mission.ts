@@ -1,4 +1,10 @@
-import { CAUGHT_CHECK, EscapeMode } from './escape';
+import {
+  CAUGHT_CHECK,
+  EscapeMode,
+  HARD,
+  MissionEscapeMode,
+  ORDINARY,
+} from './escape';
 import Action from '@civ-clone/core-unit/Action';
 import AgentLost from '../Rules/AgentLost';
 import AgentSurvives from '../Rules/AgentSurvives';
@@ -42,8 +48,9 @@ export const agentSurvives = (
 };
 
 /**
- * The mode `unit` will escape with after `mission` (`MissionMode`): the first rule's answer, or `defaultMode` with
- * none. Ask it once, before the caught check and the mission's effects.
+ * The mode `unit` will escape with after `mission` (`MissionMode`): the first answer that is `ORDINARY` or `HARD`
+ * (anything else, `undefined` or `CAUGHT_CHECK` included, is passed over), or `defaultMode` with none. Ask it once,
+ * before the caught check and the mission's effects.
  */
 export const missionMode = (
   unit: Unit,
@@ -51,7 +58,11 @@ export const missionMode = (
   defaultMode: EscapeMode,
   ruleRegistry: RuleRegistry
 ): EscapeMode => {
-  const [mode] = ruleRegistry.process(MissionMode, unit, mission, defaultMode);
+  const [mode] = ruleRegistry
+    .process(MissionMode, unit, mission, defaultMode)
+    .filter((answer: unknown): answer is MissionEscapeMode =>
+      [ORDINARY, HARD].includes(answer as number)
+    );
 
   return mode === undefined ? defaultMode : mode;
 };

@@ -12,7 +12,8 @@ This is a library: it has no `main` and registers nothing. The mission actions (
 Every mission (but BribeUnit, whose agent is never used up) does this, in order:
 
 1. **`MissionMode(unit, mission, defaultMode) → mode`**: the mode the agent will escape with after the mission. The
-   default is the mission's own choice (`HARD` after a chosen target, `ORDINARY` otherwise); the first answer wins. A
+   default is the mission's own choice (`HARD` after a chosen target, `ORDINARY` otherwise); the first answer that is
+   `ORDINARY` or `HARD` wins (`undefined` or `CAUGHT_CHECK` is passed over). A
    rule set makes, say, a theft at a city already robbed `HARD`.
 2. **`AgentSurvives(unit, mission, CAUGHT_CHECK, mode)`**: the caught check. `false` means the agent is caught: the
    `AgentLost` rules run (`caught` true) and it is destroyed by the city's owner (the target's owner for SabotageUnit),

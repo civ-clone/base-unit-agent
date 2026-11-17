@@ -20,8 +20,9 @@ export declare const agentSurvives: (
   resolvedMode?: EscapeMode
 ) => boolean;
 /**
- * The mode `unit` will escape with after `mission` (`MissionMode`): the first rule's answer, or `defaultMode` with
- * none. Ask it once, before the caught check and the mission's effects.
+ * The mode `unit` will escape with after `mission` (`MissionMode`): the first answer that is `ORDINARY` or `HARD`
+ * (anything else, `undefined` or `CAUGHT_CHECK` included, is passed over), or `defaultMode` with none. Ask it once,
+ * before the caught check and the mission's effects.
  */
 export declare const missionMode: (
   unit: Unit,
